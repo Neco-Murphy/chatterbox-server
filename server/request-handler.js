@@ -5,13 +5,14 @@
  * this file and include it in basic-server.js so that it actually works.
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 
-var handleRequest = function(request, response) {
+// var exports = module.exports = {};
+
+exports.handleRequest = function(request, response) {
   /* the 'request' argument comes from nodes http module. It includes info about the
   request - such as what URL the browser is requesting. */
 
   /* Documentation for both request and response can be found at
    * http://nodemanual.org/0.8.14/nodejs_ref_guide/http.html */
-
   console.log("Serving request type " + request.method + " for url " + request.url);
 
   var statusCode = 200;
@@ -21,15 +22,40 @@ var handleRequest = function(request, response) {
   var headers = defaultCorsHeaders;
 
   headers['Content-Type'] = "text/plain";
-
+  var data = {results: []};
   /* .writeHead() tells our server what HTTP status code to send back */
-  response.writeHead(statusCode, headers);
+  //response.writeHead(statusCode, headers);
 
   /* Make sure to always call response.end() - Node will not send
    * anything back to the client until you do. The string you pass to
    * response.end() will be the body of the response - i.e. what shows
    * up in the browser.*/
-  response.end("Hello, World!");
+
+
+
+  if(request.method === "POST"){
+    request.on('data', function (chunk) {
+      console.log("Data chunk = " + chunk);
+      data.results.push(JSON.parse(chunk));
+      return data;
+      console.log(data.results);
+    });
+    statusCode = 201;
+    response.writeHead(statusCode, headers);
+    //console.log("data.results = " + data.results);
+    console.log("data.results[0] = " + data.results[0]);
+    response.end(JSON.stringify(data));
+    [ { username: 'Jono', message: 'Do my bidding!' } ]
+    response.body = JSON.stringify({results: [{username: "Jono", message: 'Do my bidding!'}]});
+    var messages = JSON.parse(response.body).results;
+    console.log(messages[0].username);
+    console.log(messages[0].message);
+  }
+  if(request.method === "GET"){
+    statusCode = 200;
+    response.writeHead(statusCode, headers);
+    response.end(JSON.stringify(data));
+  }
 };
 
 /* These headers will allow Cross-Origin Resource Sharing (CORS).
