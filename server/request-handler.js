@@ -6,7 +6,17 @@
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 
 // var exports = module.exports = {};
-  var data = {results: []};
+var fs = require('fs');
+var data;
+
+fs.readFile('./message.log', function (err, messages) {
+  if (err) {
+    data = {results: []};
+  } else {
+    console.log(messages.toString('utf8').split('---'));
+  }
+});
+
 
 exports.handleRequest = function(request, response) {
   /* the 'request' argument comes from nodes http module. It includes info about the
@@ -36,17 +46,36 @@ exports.handleRequest = function(request, response) {
   if(request.method === "POST"){
     request.on('data', function (chunk) {
       data.results.push(JSON.parse(chunk));
+      fs.exists("./message.log", function(exists){
+        if(exists){
+          //console.log("The file does exist.")
+          fs.appendFile('message.log', "---" + JSON.stringify(data.results[data.results.length-1]), function (err) {
+            if (err) {
+              throw err;
+            } else {
+              //console.log('The "data to append" was appended to file!');
+            }
+          });
+        } else {
+          //console.log("The file does NOT yet exist.")
+          fs.appendFile('message.log', JSON.stringify(data.results[data.results.length-1]), function (err) {
+            if (err) {
+              throw err;
+            } else {
+              //console.log('The "data to append" was appended to file!');
+            }
+          });
+        }
+      });
     });
+
     statusCode = 201;
     response.writeHead(statusCode, headers);
     response.end(JSON.stringify(data));
-    console.log(data);
   }
   else if(request.method === "GET" && request.url === "/classes/messages/"){
-    console.log(request.url);
     statusCode = 200;
     response.writeHead(statusCode, headers);
-    console.log("in get",data)
     response.end(JSON.stringify(data));
   } else if(request.method === 'OPTIONS'){
     statusCode = '200 OK';
@@ -111,6 +140,6 @@ exports.handler = function(request, response){
 var defaultCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "access-control-allow-headers": "content-type, accept, X-Parse-Application-Id, X-Parse-REST-API-Key",
+  "access-control-allow-headers": "content-type, accept",
   "access-control-max-age": 10 // Seconds.
 };

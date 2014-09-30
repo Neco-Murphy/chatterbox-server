@@ -33,7 +33,7 @@ $(function() {
       //app.fetch(false);
 
       // Poll for new messages
-      //setInterval(app.fetch, 3000);
+      setInterval(app.fetch, 3000);
     },
     send: function(data) {
       app.startSpinner();
@@ -64,18 +64,17 @@ $(function() {
         data: {/* order: '-createdAt'*/},
         success: function(data) {
           console.log('chatterbox: Messages fetched');
-          console.log(typeof data)
           data = JSON.parse(data);
           // Don't bother if we have nothing to work with
-          console.log(data.results);
-          if (!data.results || !data.results.length) { console.log("returning!"); return; }
+          console.log(data.results.length);
+          if (!data.results || !data.results.length) { return; }
 
           // Get the last message
           var mostRecentMessage = data.results[data.results.length-1];
           var displayedRoom = $('.chat span').first().data('roomname');
-          app.stopSpinner();
+
           // Only bother updating the DOM if we have a new message
-          if (mostRecentMessage.objectId !== app.lastMessageId || app.roomname !== displayedRoom) {
+          //if (mostRecentMessage.objectId !== app.lastMessageId || app.roomname !== displayedRoom) {
             // Update the UI with the fetched rooms
             app.populateRooms(data.results);
 
@@ -84,10 +83,13 @@ $(function() {
 
             // Store the ID of the most recent message
             app.lastMessageId = mostRecentMessage.objectId;
-          }
+          //}
         },
         error: function(data) {
           console.error('chatterbox: Failed to fetch messages');
+        },
+        complete: function() {
+          app.stopSpinner();
         }
       });
     },
