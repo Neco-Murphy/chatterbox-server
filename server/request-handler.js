@@ -40,13 +40,20 @@ exports.handleRequest = function(request, response) {
     statusCode = 201;
     response.writeHead(statusCode, headers);
     response.end(JSON.stringify(data));
+    console.log(data);
   }
-  else if(request.method === "GET" && request.url === "/classes/messages"){
+  else if(request.method === "GET" && request.url === "/classes/messages/"){
     console.log(request.url);
     statusCode = 200;
     response.writeHead(statusCode, headers);
+    console.log("in get",data)
     response.end(JSON.stringify(data));
-  } else {
+  } else if(request.method === 'OPTIONS'){
+    statusCode = '200 OK';
+    headers['Allow'] = 'HEAD,GET,PUT,DELETE,OPTIONS';
+    response.writeHead(statusCode, headers);
+    response.end(JSON.stringify(data));
+  }else {
     statusCode = 404;
     response.writeHead(statusCode, headers);
     response.end();
@@ -104,6 +111,6 @@ exports.handler = function(request, response){
 var defaultCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "access-control-allow-headers": "content-type, accept",
+  "access-control-allow-headers": "content-type, accept, X-Parse-Application-Id, X-Parse-REST-API-Key",
   "access-control-max-age": 10 // Seconds.
 };

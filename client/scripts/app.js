@@ -5,7 +5,7 @@ $(function() {
   app = {
 //TODO: The current 'addFriend' function just adds the class 'friend'
 //to all messages sent by the user
-    server: 'http://127.0.0.1:3000/classes/chatterbox/',
+    server: 'http://127.0.0.1:3000/classes/messages/',
     username: 'anonymous',
     roomname: 'lobby',
     lastMessageId: 0,
@@ -27,12 +27,13 @@ $(function() {
       app.$send.on('submit', app.handleSubmit);
       app.$roomSelect.on('change', app.saveRoom);
 
+      // ---------------------- FIX THIS ---------------------
       // Fetch previous messages
-      app.startSpinner();
-      app.fetch(false);
+      //app.startSpinner();
+      //app.fetch(false);
 
       // Poll for new messages
-      setInterval(app.fetch, 3000);
+      //setInterval(app.fetch, 3000);
     },
     send: function(data) {
       app.startSpinner();
@@ -60,12 +61,14 @@ $(function() {
         url: app.server,
         type: 'GET',
         contentType: 'application/json',
-        data: { order: '-createdAt'},
+        data: {/* order: '-createdAt'*/},
         success: function(data) {
           console.log('chatterbox: Messages fetched');
-
+          console.log(typeof data)
+          data = JSON.parse(data);
           // Don't bother if we have nothing to work with
-          if (!data.results || !data.results.length) { return; }
+          console.log(data.results);
+          if (!data.results || !data.results.length) { console.log("returning!"); return; }
 
           // Get the last message
           var mostRecentMessage = data.results[data.results.length-1];
