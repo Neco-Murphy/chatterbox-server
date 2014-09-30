@@ -7,13 +7,24 @@
 
 // var exports = module.exports = {};
 var fs = require('fs');
+var urlParse = require('url');
+
 var data;
+
+var defaultCorsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "access-control-allow-headers": "content-type, accept",
+  "access-control-max-age": 10,
+  "Content-Type": "application/json"
+};
 
 fs.readFile('./message.log', function (err, messages) {
   if (err) {
     data = {results: []};
   } else {
     console.log(messages.toString('utf8').split('---'));
+    data = {results: messages.toString('utf8').split('---')};
   }
 });
 
@@ -32,7 +43,12 @@ exports.handleRequest = function(request, response) {
    * below about CORS. */
   var headers = defaultCorsHeaders;
 
-  headers['Content-Type'] = "text/plain";
+  var respondRequest = function(statusCode, output){
+    response.writeHead(statusCode, headers);
+    response.end(JSON.stringify(output));
+  };
+
+
   /* .writeHead() tells our server what HTTP status code to send back */
   //response.writeHead(statusCode, headers);
 
@@ -42,104 +58,52 @@ exports.handleRequest = function(request, response) {
    * up in the browser.*/
 
 
-
-  if(request.method === "POST"){
-    request.on('data', function (chunk) {
+  var addData = function(request){
+    request.on('data', function(chunk){
       data.results.push(JSON.parse(chunk));
       fs.exists("./message.log", function(exists){
         if(exists){
-          //console.log("The file does exist.")
           fs.appendFile('message.log', "---" + JSON.stringify(data.results[data.results.length-1]), function (err) {
             if (err) {
               throw err;
-            } else {
-              //console.log('The "data to append" was appended to file!');
             }
           });
         } else {
-          //console.log("The file does NOT yet exist.")
           fs.appendFile('message.log', JSON.stringify(data.results[data.results.length-1]), function (err) {
             if (err) {
               throw err;
-            } else {
-              //console.log('The "data to append" was appended to file!');
             }
           });
         }
       });
     });
+  };
 
-    statusCode = 201;
-    response.writeHead(statusCode, headers);
-    response.end(JSON.stringify(data));
+  var actions = {
+    'GET': function(request, response){
+      if(request.url === "/classes/messages/" || request.url.search("/classes/room") !== -1){
+        respondRequest(200, data);
+      }
+    },
+    'POST': function(request, response){
+    //   request.on('data', function (chunk) {
+    //   data.results.push(JSON.parse(chunk));
+    // });
+      addData(request);
+      respondRequest(201, null)
+    },
+    'OPTIONS': function(request, response){
+      headers['Allow'] = 'HEAD,GET,PUT,DELETE,OPTIONS';
+      respondRequest('200 OK', data);
+    }
   }
-  else if(request.method === "GET" && request.url === "/classes/messages/"){
-    statusCode = 200;
-    response.writeHead(statusCode, headers);
-    response.end(JSON.stringify(data));
-  } else if(request.method === 'OPTIONS'){
-    statusCode = '200 OK';
-    headers['Allow'] = 'HEAD,GET,PUT,DELETE,OPTIONS';
-    response.writeHead(statusCode, headers);
-    response.end(JSON.stringify(data));
-  }else {
-    statusCode = 404;
-    response.writeHead(statusCode, headers);
-    response.end();
+
+  var action = actions[request.method];
+  if(action){
+    action(request, response);
+  }else{
+    respondRequest(404, null);
   }
+
 };
 
-exports.handler = function(request, response){
-  /* the 'request' argument comes from nodes http module. It includes info about the
-  request - such as what URL the browser is requesting. */
-
-  /* Documentation for both request and response can be found at
-   * http://nodemanual.org/0.8.14/nodejs_ref_guide/http.html */
-  console.log("Serving request type " + request.method + " for url " + request.url);
-
-  var statusCode = 200;
-
-  /* Without this line, this server wouldn't work. See the note
-   * below about CORS. */
-  var headers = defaultCorsHeaders;
-
-  headers['Content-Type'] = "text/plain";
-  /* .writeHead() tells our server what HTTP status code to send back */
-  //response.writeHead(statusCode, headers);
-
-  /* Make sure to always call response.end() - Node will not send
-   * anything back to the client until you do. The string you pass to
-   * response.end() will be the body of the response - i.e. what shows
-   * up in the browser.*/
-
-
-
-  if(request.method === "POST"){
-    request.on('data', function (chunk) {
-      data.results.push(JSON.parse(chunk));
-    });
-    statusCode = 201;
-    response.writeHead(statusCode, headers);
-    response.end(JSON.stringify(data));
-  } else if (request.method === "GET" && request.url.search("/classes/room") !== -1) {
-    statusCode = 200;
-    response.writeHead(statusCode, headers);
-    response.end(JSON.stringify(data))
-  } else {
-    statusCode = 404;
-    response.writeHead(statusCode, headers);
-    response.end();
-  }
-};
-
-/* These headers will allow Cross-Origin Resource Sharing (CORS).
- * This CRUCIAL code allows this server to talk to websites that
- * are on different domains. (Your chat client is running from a url
- * like file://your/chat/client/index.html, which is considered a
- * different domain.) */
-var defaultCorsHeaders = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "access-control-allow-headers": "content-type, accept",
-  "access-control-max-age": 10 // Seconds.
-};

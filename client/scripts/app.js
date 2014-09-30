@@ -64,7 +64,6 @@ $(function() {
         data: {/* order: '-createdAt'*/},
         success: function(data) {
           console.log('chatterbox: Messages fetched');
-          data = JSON.parse(data);
           // Don't bother if we have nothing to work with
           console.log(data.results.length);
           if (!data.results || !data.results.length) { return; }
