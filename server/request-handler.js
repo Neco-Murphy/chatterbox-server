@@ -6,6 +6,7 @@
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 
 // var exports = module.exports = {};
+  var data = {results: []};
 
 exports.handleRequest = function(request, response) {
   /* the 'request' argument comes from nodes http module. It includes info about the
@@ -22,7 +23,6 @@ exports.handleRequest = function(request, response) {
   var headers = defaultCorsHeaders;
 
   headers['Content-Type'] = "text/plain";
-  var data = {results: []};
   /* .writeHead() tells our server what HTTP status code to send back */
   //response.writeHead(statusCode, headers);
 
@@ -35,26 +35,21 @@ exports.handleRequest = function(request, response) {
 
   if(request.method === "POST"){
     request.on('data', function (chunk) {
-      console.log("Data chunk = " + chunk);
       data.results.push(JSON.parse(chunk));
-      return data;
-      console.log(data.results);
     });
     statusCode = 201;
     response.writeHead(statusCode, headers);
-    //console.log("data.results = " + data.results);
-    console.log("data.results[0] = " + data.results[0]);
     response.end(JSON.stringify(data));
-    [ { username: 'Jono', message: 'Do my bidding!' } ]
-    response.body = JSON.stringify({results: [{username: "Jono", message: 'Do my bidding!'}]});
-    var messages = JSON.parse(response.body).results;
-    console.log(messages[0].username);
-    console.log(messages[0].message);
   }
-  if(request.method === "GET"){
+  else if(request.method === "GET" && request.url === "/classes/messages"){
+    console.log(request.url);
     statusCode = 200;
     response.writeHead(statusCode, headers);
     response.end(JSON.stringify(data));
+  } else {
+    statusCode = 404;
+    response.writeHead(statusCode, headers);
+    response.end();
   }
 };
 
